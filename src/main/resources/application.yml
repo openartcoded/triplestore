@@ -1,0 +1,32 @@
+application:
+  basePath: ${DATA_DIR:/tmp}
+server:
+  port: ${SERVER_PORT:0}
+
+triplestore:
+  query:
+    timeout: ${SECONDS_BEFORE_QUERY_TIMEOUT:30}
+  batchSize: ${BATCH_SIZE:1000}
+  maxRetry: ${MAX_RETRY:5}
+  database:
+    dir: ${TRIPLESTORE_DB_PATH:${application.basePath}/tdb2}
+    unionDefaultGraph: ${UNION_DEFAULT_GRAPH:true}
+  migration:
+    dir: ${MIGRATION_PATH:${application.basePath}/migrations}
+    defaultGraph: ${MIGRATION_DEFAULT_GRAPH:https://bittich.be/application}
+sparql:
+  update:
+    failure:
+      directory: ${SPARQL_UPDATE_FAILURE_DIRECTORY:${application.basePath}/update-failure}
+
+spring:
+  application:
+    name: tdb-triplestore
+  config:
+    import:
+      - ${SECURITY_CONFIG:classpath:config/security-disabled.yml}
+      - ${ARTEMIS_CONFIG:classpath:config/artemis-embedded.yml}
+      - ${BUCKET_CONFIG:classpath:config/bucket.yml}
+      - ${ACTUATOR_CONFIG:classpath:config/actuator.yml}
+
+
