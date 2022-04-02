@@ -17,10 +17,16 @@ import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RDFFormat;
 import org.apache.jena.riot.RDFLanguages;
+import org.apache.jena.sparql.exec.UpdateExec;
 import org.apache.jena.system.Txn;
 import org.apache.jena.update.UpdateExecution;
 import org.apache.jena.update.UpdateExecutionFactory;
 import org.apache.jena.update.UpdateRequest;
+import org.seaborne.patch.RDFChanges;
+import org.seaborne.patch.changes.PatchSummary;
+import org.seaborne.patch.changes.RDFChangesCounter;
+import org.seaborne.patch.system.DatasetGraphChanges;
+import org.seaborne.patch.system.RDFChangesSuppressEmpty;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import tech.artcoded.triplestore.sparql.QueryParserUtil;
@@ -28,6 +34,7 @@ import tech.artcoded.triplestore.sparql.SparqlResult;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.StringWriter;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -132,24 +139,33 @@ public class TDBService {
   }
 
   @SneakyThrows
-  public void executeUpdateQuery(String updateQuery) {
-    Txn.executeWrite(ds, () -> QueryParserUtil.parseUpdate(updateQuery)
-                                              .map(u -> u.query() instanceof UpdateRequest updates ? updates : null)
-                                              .map(u -> UpdateExecutionFactory.create(u, ds))
-                                              .ifPresent(UpdateExecution::execute));
+  public PatchSummary executeUpdateQuery(String updateQuery) {
+    var counter = new RDFChangesCounter();
+    RDFChanges c = new RDFChangesSuppressEmpty(counter);
+    var dsg0 = ds.asDatasetGraph();
+    var dsg = new DatasetGraphChanges(dsg0, c);
+    Txn.executeWrite(ds, () -> {
+      QueryParserUtil.parseUpdate(updateQuery)
+              .map(u -> u.query() instanceof UpdateRequest updates ? updates : null)
+              .map(u -> UpdateExec.dataset(dsg).update(u).build())
+              .ifPresent(UpdateExec::execute);
 
+    });
+    return counter.summary();
   }
 
-  public void insertModel(String graphUri, Model model) {
-    var triples = writeToOutputStream(outputStream -> RDFDataMgr.write(outputStream, model, RDFFormat.NTRIPLES));
-    String updateQuery = String.format("INSERT DATA { GRAPH <%s> { %s } }", graphUri, triples);
-    executeUpdateQuery(updateQuery);
+  public PatchSummary insertModel(String graphUri, Model model) {
+    var writer = new StringWriter();
+    RDFDataMgr.write(writer, model, RDFFormat.NTRIPLES);
+    String updateQuery = String.format("INSERT DATA { GRAPH <%s> { %s } }", graphUri, writer);
+    log.debug(updateQuery);
+    return executeUpdateQuery(updateQuery);
   }
 
-  public void batchLoadData(String graph, Model model) {
+  public long batchLoadData(String graph, Model model) {
     log.info("running import triples with batch size {}, model size: {}, graph: <{}>", batchSize, model.size(), graph);
     List<Triple> triples = model.getGraph().find().toList(); //duplicate so we can splice
-    Lists.partition(triples, batchSize)
+    return Lists.partition(triples, batchSize)
          .stream()
          .parallel()
          .map(batch -> {
@@ -159,25 +175,23 @@ public class TDBService {
            return batchModel;
          })
          .peek(batchModel -> log.info("running import triples with model size {}", batchModel.size()))
-         .forEach(batchModel -> this.insertModelOrRetry(graph, batchModel));
+         .map(batchModel -> this.insertModelOrRetry(graph, batchModel))
+            .mapToLong(p -> p.getCountAddData() + p.getCountDeleteData())
+            .sum()
+    ;
   }
 
-  private void insertModelOrRetry(String graph, Model batchModel) {
+  private PatchSummary insertModelOrRetry(String graph, Model batchModel) {
     int retryCount = 0;
-    boolean success = false;
     do {
       try {
-        this.insertModel(graph, batchModel);
-        success = true;
-        break;
+        return this.insertModel(graph, batchModel);
       }
       catch (Exception e) {
         log.error("an error occurred, retry count {}, max retry {}, error: {}", retryCount, maxRetry, e);
         retryCount += 1;
       }
     } while (retryCount < maxRetry);
-    if (!success) {
       throw new RuntimeException("Reaching max retries. Check the logs for further details.");
-    }
   }
 }

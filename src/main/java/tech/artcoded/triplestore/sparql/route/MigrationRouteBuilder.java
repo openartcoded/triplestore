@@ -46,6 +46,9 @@ public class MigrationRouteBuilder extends RouteBuilder {
     this.tdbService = tdbService;
   }
 
+  record Migration (String uuid,long count){}
+
+
   @Override
   public void configure() throws Exception {
     onException(Exception.class)
@@ -63,11 +66,21 @@ public class MigrationRouteBuilder extends RouteBuilder {
               .otherwise()
                 .setProperty(HEADER_TITLE, simple("'${headers.%s}', has been executed to the triplestore".formatted(Exchange.FILE_NAME)))
                 .setProperty(HEADER_TYPE, constant(SYNC_FILE_TRIPLESTORE))
-                .bean(() -> this, "performMigration")
-                .setHeader(CORRELATION_ID, body())
-                .setHeader(HEADER_TITLE, exchangeProperty(HEADER_TITLE))
-                .setHeader(HEADER_TYPE, exchangeProperty(HEADER_TYPE))
-                .to(ExchangePattern.InOnly, NOTIFICATION_ENDPOINT)
+                .to(ExchangePattern.InOnly, "direct:perform-migration")
+            .endChoice();
+
+    from("direct:perform-migration")
+            .routeId("MigrationRoute::PerformMigrationInternal")
+            .bean(() -> this, "performMigration")
+            .choice()
+            .when(simple("${body.count} > 0"))
+              .transform(simple("${body.uuid}"))
+              .setHeader(CORRELATION_ID, body())
+              .setHeader(HEADER_TITLE, exchangeProperty(HEADER_TITLE))
+              .setHeader(HEADER_TYPE, exchangeProperty(HEADER_TYPE))
+              .to(ExchangePattern.InOnly, NOTIFICATION_ENDPOINT)
+            .otherwise()
+            .log("No triples changed")
             .endChoice();
   }
 
@@ -76,21 +89,22 @@ public class MigrationRouteBuilder extends RouteBuilder {
     GRAPH_CACHE.put(getBaseName(fileName), IOUtils.toString(file, StandardCharsets.UTF_8.name()));
   }
 
-  String performMigration(@Body byte[] file,
+  Migration performMigration(@Body byte[] file,
                           @Header(Exchange.FILE_NAME) String fileName) {
     String extension = FileNameUtils.getExtension(fileName);
 
     if ("sparql".equalsIgnoreCase(extension)) {
-      tdbService.executeUpdateQuery(IOUtils.toString(file, StandardCharsets.UTF_8.name()));
-      return UUID.randomUUID().toString();
+      var summary = tdbService.executeUpdateQuery(IOUtils.toString(file, StandardCharsets.UTF_8.name()));
+      return new Migration(UUID.randomUUID().toString(), summary.getCountAddData() + summary.getCountDeleteData());
+    } else {
+      Lang lang = RDFLanguages.filenameToLang(fileName);
+      var model = ModelFactory.createDefaultModel();
+      RDFDataMgr.read(model, new ByteArrayInputStream(file), lang);
+      String graph = ofNullable(GRAPH_CACHE.getIfPresent(getBaseName(fileName))).orElseGet(() -> defaultGraph);
+      var summary = tdbService.batchLoadData(graph, model);
+      return new Migration(UUID.randomUUID().toString(), summary);
     }
 
-    Lang lang = RDFLanguages.filenameToLang(fileName);
-    var model = ModelFactory.createDefaultModel();
-    RDFDataMgr.read(model, new ByteArrayInputStream(file), lang);
-    String graph = ofNullable(GRAPH_CACHE.getIfPresent(getBaseName(fileName))).orElseGet(() -> defaultGraph);
-    tdbService.batchLoadData(graph, model);
-    return UUID.randomUUID().toString();
 
   }
 }

@@ -37,6 +37,11 @@
       <version>0.5.2</version>
     </dependency>
     <dependency>
+      <groupId>org.seaborne.rdf-delta</groupId>
+      <artifactId>rdf-patch</artifactId>
+      <version>1.1.0</version>
+    </dependency>
+    <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-cache</artifactId>
     </dependency>
