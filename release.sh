@@ -19,8 +19,8 @@ mvn release:clean
 git pull
 
 git checkout $releaseVersion
-docker build -t artcoded/triplestore:v$releaseVersion .
-docker tag artcoded/triplestore:v$releaseVersion artcoded:5000/artcoded/triplestore:v$releaseVersion
-docker push artcoded:5000/artcoded/triplestore:v$releaseVersion
+docker build -t nbittich/triplestore:v$releaseVersion .
+docker tag nbittich/triplestore:v$releaseVersion nbittich/triplestore:v$releaseVersion
+docker push nbittich/triplestore:v$releaseVersion
 
 git checkout main
