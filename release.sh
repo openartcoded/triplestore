@@ -15,12 +15,3 @@ mvn --batch-mode -Dtag=$releaseVersion release:prepare \
                  -DreleaseVersion=$releaseVersion \
                  -DdevelopmentVersion=$nextVersion
 
-mvn release:clean
-git pull
-
-git checkout $releaseVersion
-docker build -t nbittich/triplestore:v$releaseVersion .
-docker tag nbittich/triplestore:v$releaseVersion nbittich/triplestore:v$releaseVersion
-docker push nbittich/triplestore:v$releaseVersion
-
-git checkout main

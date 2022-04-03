@@ -26,7 +26,7 @@
   </properties>
   <scm>
     <connection>
-      scm:git:git@github.com:bittichbe/artcoded-triplestore.git
+      scm:git:git@github.com:openartcoded/triplestore.git
     </connection>
     <tag>HEAD</tag>
   </scm>
