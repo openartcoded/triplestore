@@ -14,4 +14,4 @@ echo "release" $releaseVersion ", next" $nextVersion
 mvn --batch-mode -Dtag=$releaseVersion release:prepare \
                  -DreleaseVersion=$releaseVersion \
                  -DdevelopmentVersion=$nextVersion
-
+mvn release:clean
