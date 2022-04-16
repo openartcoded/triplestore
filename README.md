@@ -16,7 +16,7 @@ e.g using security:
       MIGRATION_PATH: /migrations
       MIGRATION_DEFAULT_GRAPH: "https://bittich.be/application"
       SERVER_PORT: 80
-      JWK_SET_URI: http://auth.somehost.org:8080/auth/realms/Artcoded/protocol/openid-connect/certs
+      JWK_SET_URI: http://auth.somehost.org:8080/realms/Artcoded/protocol/openid-connect/certs
     volumes:
       - ./data/tdb2:/triplestore
       - ./data/migrations:/migrations
