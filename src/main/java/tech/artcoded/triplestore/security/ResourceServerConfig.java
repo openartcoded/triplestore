@@ -14,22 +14,22 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 @Configuration
 @EnableWebSecurity
 @ConditionalOnProperty(prefix = "application.security",
-                       name = "enabled",
-                       havingValue = "true")
+  name = "enabled",
+  havingValue = "true")
 public class ResourceServerConfig extends WebSecurityConfigurerAdapter {
 
   @Override
   protected void configure(HttpSecurity http) throws Exception {
     http
-            .csrf().disable()
-            .authorizeRequests()
-            .antMatchers("/public/**").permitAll()
-            .antMatchers("/actuator/prometheus/**")
-            .hasAnyRole("PROMETHEUS")
-            .anyRequest().authenticated()
-            .and()
-            .oauth2ResourceServer()
-            .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()));
+      .csrf().disable()
+      .authorizeRequests()
+      .antMatchers("/public/**").permitAll()
+      .antMatchers("/actuator/prometheus/**")
+      .hasAnyRole("PROMETHEUS")
+      .anyRequest().authenticated()
+      .and()
+      .oauth2ResourceServer()
+      .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()));
   }
 
   private Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter() {

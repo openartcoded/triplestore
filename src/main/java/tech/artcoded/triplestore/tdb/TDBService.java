@@ -19,8 +19,6 @@ import org.apache.jena.riot.RDFFormat;
 import org.apache.jena.riot.RDFLanguages;
 import org.apache.jena.sparql.exec.UpdateExec;
 import org.apache.jena.system.Txn;
-import org.apache.jena.update.UpdateExecution;
-import org.apache.jena.update.UpdateExecutionFactory;
 import org.apache.jena.update.UpdateRequest;
 import org.seaborne.patch.RDFChanges;
 import org.seaborne.patch.changes.PatchSummary;
@@ -48,10 +46,7 @@ import java.util.stream.Stream;
 import static org.apache.jena.query.ResultSetFormatter.output;
 import static org.apache.jena.riot.Lang.TURTLE;
 import static org.apache.jena.riot.RDFDataMgr.write;
-import static org.apache.jena.riot.resultset.ResultSetLang.RS_CSV;
-import static org.apache.jena.riot.resultset.ResultSetLang.RS_JSON;
-import static org.apache.jena.riot.resultset.ResultSetLang.RS_Text;
-import static org.apache.jena.riot.resultset.ResultSetLang.RS_XML;
+import static org.apache.jena.riot.resultset.ResultSetLang.*;
 
 @Service
 @Slf4j
@@ -75,20 +70,22 @@ public class TDBService {
   public SparqlResult executeQuery(Query q, String acceptHeader) {
     Supplier<SparqlResult> _executeQuery = () -> {
       try (QueryExecution queryExecution = QueryExecutionDatasetBuilder.create()
-                                                                       .query(q)
-                                                                       .dataset(ds)
-                                                                       .timeout(timeout, TimeUnit.SECONDS)
-                                                                       .build()
+        .query(q)
+        .dataset(ds)
+        .timeout(timeout, TimeUnit.SECONDS)
+        .build()
       ) {
         return switch (q.queryType()) {
           case ASK -> tryFormat((lang, out) -> output(out, queryExecution.execAsk(), lang), acceptHeader, RS_JSON);
-          case SELECT -> tryFormat((lang, out) -> output(out, queryExecution.execSelect(), lang), acceptHeader, RS_JSON);
-          case DESCRIBE -> tryFormat((lang, out) -> write(out, queryExecution.execDescribe(), lang), acceptHeader, TURTLE);
-          case CONSTRUCT -> tryFormat((lang, out) -> write(out, queryExecution.execConstruct(), lang), acceptHeader, TURTLE);
+          case SELECT ->
+            tryFormat((lang, out) -> output(out, queryExecution.execSelect(), lang), acceptHeader, RS_JSON);
+          case DESCRIBE ->
+            tryFormat((lang, out) -> write(out, queryExecution.execDescribe(), lang), acceptHeader, TURTLE);
+          case CONSTRUCT ->
+            tryFormat((lang, out) -> write(out, queryExecution.execConstruct(), lang), acceptHeader, TURTLE);
           default -> throw new UnsupportedOperationException(q.queryType() + " Not supported");
         };
-      }
-      catch (Exception exc) {
+      } catch (Exception exc) {
         log.error("exception occurred", exc);
         throw new RuntimeException(exc);
       }
@@ -100,8 +97,7 @@ public class TDBService {
     CompletableFuture<SparqlResult> future = CompletableFuture.supplyAsync(supplier);
     try {
       return future.get(timeout, TimeUnit.SECONDS);
-    }
-    catch (TimeoutException | InterruptedException | ExecutionException e) {
+    } catch (TimeoutException | InterruptedException | ExecutionException e) {
       future.cancel(true);
       throw new RuntimeException(e);
     }
@@ -112,9 +108,9 @@ public class TDBService {
     var body = writeToOutputStream(outputStream -> consumer.accept(lang, outputStream));
 
     return SparqlResult.builder()
-                       .contentType(lang.getContentType().getContentTypeStr())
-                       .body(body)
-                       .build();
+      .contentType(lang.getContentType().getContentTypeStr())
+      .body(body)
+      .build();
   }
 
   @SneakyThrows
@@ -128,10 +124,9 @@ public class TDBService {
   private Lang guessLang(String contentType, Lang fallback) {
     try {
       return Stream.concat(RDFLanguages.getRegisteredLanguages().stream(), Stream.of(RS_Text, RS_JSON, RS_XML, RS_CSV))
-                   .filter(l -> l.getContentType().equals(ContentType.create(contentType)))
-                   .findFirst().orElse(fallback);
-    }
-    catch (Exception exc) {
+        .filter(l -> l.getContentType().equals(ContentType.create(contentType)))
+        .findFirst().orElse(fallback);
+    } catch (Exception exc) {
       log.error("unexpected exception occurred", exc);
       return fallback;
     }
@@ -146,9 +141,9 @@ public class TDBService {
     var dsg = new DatasetGraphChanges(dsg0, c);
     Txn.executeWrite(ds, () -> {
       QueryParserUtil.parseUpdate(updateQuery)
-              .map(u -> u.query() instanceof UpdateRequest updates ? updates : null)
-              .map(u -> UpdateExec.dataset(dsg).update(u).build())
-              .ifPresent(UpdateExec::execute);
+        .map(u -> u.query() instanceof UpdateRequest updates ? updates : null)
+        .map(u -> UpdateExec.dataset(dsg).update(u).build())
+        .ifPresent(UpdateExec::execute);
 
     });
     return counter.summary();
@@ -166,19 +161,19 @@ public class TDBService {
     log.info("running import triples with batch size {}, model size: {}, graph: <{}>", batchSize, model.size(), graph);
     List<Triple> triples = model.getGraph().find().toList(); //duplicate so we can splice
     return Lists.partition(triples, batchSize)
-         .stream()
-         .parallel()
-         .map(batch -> {
-           Model batchModel = ModelFactory.createDefaultModel();
-           Graph batchGraph = batchModel.getGraph();
-           batch.forEach(batchGraph::add);
-           return batchModel;
-         })
-         .peek(batchModel -> log.info("running import triples with model size {}", batchModel.size()))
-         .map(batchModel -> this.insertModelOrRetry(graph, batchModel))
-            .mapToLong(p -> p.getCountAddData() + p.getCountDeleteData())
-            .sum()
-    ;
+      .stream()
+      .parallel()
+      .map(batch -> {
+        Model batchModel = ModelFactory.createDefaultModel();
+        Graph batchGraph = batchModel.getGraph();
+        batch.forEach(batchGraph::add);
+        return batchModel;
+      })
+      .peek(batchModel -> log.info("running import triples with model size {}", batchModel.size()))
+      .map(batchModel -> this.insertModelOrRetry(graph, batchModel))
+      .mapToLong(p -> p.getCountAddData() + p.getCountDeleteData())
+      .sum()
+      ;
   }
 
   private PatchSummary insertModelOrRetry(String graph, Model batchModel) {
@@ -186,12 +181,11 @@ public class TDBService {
     do {
       try {
         return this.insertModel(graph, batchModel);
-      }
-      catch (Exception e) {
+      } catch (Exception e) {
         log.error("an error occurred, retry count {}, max retry {}, error: {}", retryCount, maxRetry, e);
         retryCount += 1;
       }
     } while (retryCount < maxRetry);
-      throw new RuntimeException("Reaching max retries. Check the logs for further details.");
+    throw new RuntimeException("Reaching max retries. Check the logs for further details.");
   }
 }

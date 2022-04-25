@@ -13,10 +13,8 @@ RUN mvn package -DskipTests
 
 FROM ibm-semeru-runtimes:open-17-jre
 
-RUN mkdir /opt/shareclasses
-
 WORKDIR /app
 
 COPY --from=builder /app/target/app.jar ./app.jar
 
-ENTRYPOINT [ "java", "-Xshareclasses:cacheDir=/opt/shareclasses", "-jar","/app/app.jar"]
+ENTRYPOINT [ "java", "-Xtune:virtualized", "-Xshareclasses:cacheDir=/opt/shareclasses", "-jar","/app/app.jar"]

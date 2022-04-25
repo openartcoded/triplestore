@@ -10,9 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 
-import static java.util.Optional.empty;
-import static java.util.Optional.of;
-import static java.util.Optional.ofNullable;
+import static java.util.Optional.*;
 
 public interface QueryParserUtil {
   Logger LOGGER = LoggerFactory.getLogger(QueryParserUtil.class);
@@ -25,14 +23,13 @@ public interface QueryParserUtil {
   static Optional<QueryTuple> parseOperation(String query, boolean forceRead) {
 
     return ofNullable(query).filter(StringUtils::isNotEmpty)
-                            .flatMap(q -> parseQuery(q, forceRead).or(() -> parseUpdate(q)));
+      .flatMap(q -> parseQuery(q, forceRead).or(() -> parseUpdate(q)));
   }
 
   static Optional<QueryTuple> parseQuery(String query, boolean forceRead) {
     try {
       return of(new QueryTuple(QueryFactory.create(query), QueryType.READ));
-    }
-    catch (QueryException exception) {
+    } catch (QueryException exception) {
       LOGGER.error("unsupported operation:", exception);
       if (forceRead) {
         throw new RuntimeException(exception.getMessage());
@@ -44,8 +41,7 @@ public interface QueryParserUtil {
   static Optional<QueryTuple> parseUpdate(String query) {
     try {
       return of(new QueryTuple(UpdateFactory.create(query), QueryType.UPDATE));
-    }
-    catch (Exception exc) {
+    } catch (Exception exc) {
       LOGGER.error("unsupported operation:", exc);
       throw new RuntimeException(exc.getMessage());
     }
