@@ -5,7 +5,7 @@ WORKDIR /app
 
 COPY pom.xml .
 
-RUN mvn -B dependency:resolve-plugins dependency:resolve
+RUN mvn verify --fail-never
 
 COPY ./src ./src
 
