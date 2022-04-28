@@ -1,4 +1,4 @@
-FROM maven:3.8.4-openjdk-17 as builder
+FROM maven:3.8-openjdk-18 as builder
 LABEL maintainer="contact@bittich.be"
 
 WORKDIR /app
@@ -11,7 +11,7 @@ COPY ./src ./src
 
 RUN mvn package -DskipTests
 
-FROM ibm-semeru-runtimes:open-17-jre
+FROM ibm-semeru-runtimes:open-18-jre
 
 WORKDIR /app
 
