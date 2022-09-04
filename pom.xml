@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.7.2</version>
+        <version>2.7.3</version>
         <relativePath /> <!-- lookup parent from repository -->
     </parent>
     <groupId>tech.artcoded</groupId>
@@ -14,14 +14,14 @@
     <description>Triplestore based on tdb</description>
     <properties>
         <java.version>18</java.version>
-        <log4j2.version>2.17.2</log4j2.version>
-        <jena.version>4.5.0</jena.version>
-        <camel.version>3.16.0</camel.version>
+        <log4j2.version>2.18.0</log4j2.version>
+        <jena.version>4.6.0</jena.version>
+        <camel.version>3.18.1</camel.version>
         <commons-io.version>2.11.0</commons-io.version>
         <commons-lang3.version>3.12.0</commons-lang3.version>
         <guava.version>31.1-jre</guava.version>
         <caffeine.version>3.0.6</caffeine.version>
-        <micrometer-registry-prometheus.version>1.9.0</micrometer-registry-prometheus.version>
+        <micrometer-registry-prometheus.version>1.9.3</micrometer-registry-prometheus.version>
 
     </properties>
     <scm>
