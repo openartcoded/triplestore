@@ -8,8 +8,8 @@ e.g using security:
     restart: always
     environment:
       DATA_DIR: /triplestore
-      SECURITY_CONFIG: "classpath:config/security.yml"
-      ARTEMIS_CONFIG: "classpath:config/artemis.yml"
+      SECURITY_CONFIG: "classpath:config/security-disabled.yml"
+      ARTEMIS_CONFIG: "classpath:config/artemis-embedded.yml"
       ARTEMIS_URL: tcp://artemis:61616
       ARTEMIS_USER: root
       ARTEMIS_PASSWORD: root
