@@ -14,14 +14,15 @@
     <description>Triplestore based on tdb</description>
     <properties>
         <java.version>18</java.version>
-        <jena.version>4.6.0</jena.version>
-        <camel.version>3.18.1</camel.version>
+        <jena.version>4.6.1</jena.version>
+        <camel.version>3.19.0</camel.version>
         <commons-io.version>2.11.0</commons-io.version>
         <commons-lang3.version>3.12.0</commons-lang3.version>
         <guava.version>31.1-jre</guava.version>
         <caffeine.version>3.0.6</caffeine.version>
-        <micrometer-registry-prometheus.version>1.9.3</micrometer-registry-prometheus.version>
-
+        <micrometer-registry-prometheus.version>1.10.2</micrometer-registry-prometheus.version>
+        <bucket4j.version>0.7.0</bucket4j.version>
+        <rdf-patch.version>1.1.2</rdf-patch.version>
     </properties>
     <scm>
         <connection>
@@ -33,12 +34,12 @@
         <dependency>
             <groupId>com.giffing.bucket4j.spring.boot.starter</groupId>
             <artifactId>bucket4j-spring-boot-starter</artifactId>
-            <version>0.5.2</version>
+            <version>${bucket4j.version}</version>
         </dependency>
         <dependency>
             <groupId>org.seaborne.rdf-delta</groupId>
             <artifactId>rdf-patch</artifactId>
-            <version>1.1.0</version>
+            <version>${rdf-patch.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
