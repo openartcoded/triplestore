@@ -20,9 +20,9 @@ public class ResourceServerConfig {
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http
         .csrf().disable()
-        .authorizeRequests()
-        .antMatchers("/public/**").permitAll()
-        .antMatchers("/actuator/prometheus/**")
+        .authorizeHttpRequests()
+        .requestMatchers("/public/**").permitAll()
+        .requestMatchers("/actuator/prometheus/**")
         .hasAnyRole("PROMETHEUS")
         .anyRequest().authenticated()
         .and()
