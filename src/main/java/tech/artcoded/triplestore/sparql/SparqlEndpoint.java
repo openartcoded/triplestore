@@ -20,12 +20,18 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
+
+import com.github.andrewoma.dexx.collection.HashSet;
+
 import tech.artcoded.triplestore.tdb.TDBService;
 
 import jakarta.servlet.http.HttpServletRequest;
+
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Optional.*;
@@ -44,8 +50,11 @@ public class SparqlEndpoint {
   @Value("${application.security.enabled}")
   private boolean securityEnabled;
 
-  @Setter
   private Set<String> allowedRoles;
+
+  public void setAllowedRoles(List<String> allowedRoles) {
+    this.allowedRoles = allowedRoles.stream().collect(Collectors.toUnmodifiableSet());
+  }
 
   public SparqlEndpoint(ProducerTemplate producerTemplate, TDBService tdbService) {
     this.producerTemplate = producerTemplate;
@@ -83,16 +92,24 @@ public class SparqlEndpoint {
       return parseOperation(query, forceRead).flatMap(operation -> switch (operation.type()) {
         case READ:
           if (operation.query() instanceof Query q)
+
             yield of(executeRead(q, accept));
           else
+
             yield empty();
         case UPDATE:
-          if (operation.query() instanceof UpdateRequest upq)
+          if (operation.query() instanceof
+
+          UpdateRequest upq)
+
             yield of(executeUpdate(upq));
           else
+
             yield empty();
       }).orElseGet(() -> ResponseEntity.noContent().build());
-    } catch (Exception exc) {
+    } catch (
+
+    Exception exc) {
       return ResponseEntity.status(400)
           .body((out) -> IOUtils.write("{error: '%s'}".formatted(exc.getMessage()), out, UTF_8));
     }
