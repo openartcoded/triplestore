@@ -5,8 +5,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.annotation.EnableCaching;
 
+import tech.artcoded.triplestore.sparql.SparqlSecurityConfig;
+
 @SpringBootApplication
-@EnableConfigurationProperties
+@EnableConfigurationProperties({ SparqlSecurityConfig.class })
 @EnableCaching
 public class TriplestoreApplication {
 

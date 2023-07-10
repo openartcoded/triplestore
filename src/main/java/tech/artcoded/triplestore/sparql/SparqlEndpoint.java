@@ -1,6 +1,5 @@
 package tech.artcoded.triplestore.sparql;
 
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.ExchangePattern;
 import org.apache.camel.ProducerTemplate;
@@ -9,7 +8,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.jena.query.Query;
 import org.apache.jena.update.UpdateRequest;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -21,17 +19,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-import com.github.andrewoma.dexx.collection.HashSet;
-
 import tech.artcoded.triplestore.tdb.TDBService;
 
 import jakarta.servlet.http.HttpServletRequest;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Optional.*;
@@ -41,7 +35,6 @@ import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static tech.artcoded.triplestore.sparql.QueryParserUtil.parseOperation;
 
 @RestController
-@ConfigurationProperties("application.security.sparql.update")
 @Slf4j
 public class SparqlEndpoint {
   private final ProducerTemplate producerTemplate;
@@ -49,16 +42,12 @@ public class SparqlEndpoint {
 
   @Value("${application.security.enabled}")
   private boolean securityEnabled;
+  private final SparqlSecurityConfig sparqlConfig;
 
-  private Set<String> allowedRoles;
-
-  public void setAllowedRoles(List<String> allowedRoles) {
-    this.allowedRoles = allowedRoles.stream().collect(Collectors.toUnmodifiableSet());
-  }
-
-  public SparqlEndpoint(ProducerTemplate producerTemplate, TDBService tdbService) {
+  public SparqlEndpoint(ProducerTemplate producerTemplate, SparqlSecurityConfig sparqlConfig, TDBService tdbService) {
     this.producerTemplate = producerTemplate;
     this.tdbService = tdbService;
+    this.sparqlConfig = sparqlConfig;
   }
 
   @RequestMapping(value = "/public/sparql", method = { RequestMethod.GET, RequestMethod.POST })
@@ -141,7 +130,7 @@ public class SparqlEndpoint {
 
   boolean canUpdate() {
     if (securityEnabled) {
-      List<String> roles = ofNullable(allowedRoles).orElseGet(Set::of)
+      List<String> roles = ofNullable(sparqlConfig.getAllowedRoles()).orElseGet(Set::of)
           .stream()
           .map("ROLE_"::concat)
           .peek(log::debug)
