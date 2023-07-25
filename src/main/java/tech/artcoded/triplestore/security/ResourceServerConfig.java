@@ -10,19 +10,29 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.servlet.util.matcher.MvcRequestMatcher;
+import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 
 @Configuration
 @EnableWebSecurity
 @ConditionalOnProperty(prefix = "application.security", name = "enabled", havingValue = "true")
 public class ResourceServerConfig {
 
+  private final HandlerMappingIntrospector introspector;
+
+  public ResourceServerConfig(HandlerMappingIntrospector introspector) {
+    this.introspector = introspector;
+  }
+
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    var prometheusMatcher = new MvcRequestMatcher(introspector, "/api/actuator/prometheus/**");
+    var publicMatcher = new MvcRequestMatcher(introspector, "/public/**");
     http
         .csrf().disable()
         .authorizeHttpRequests()
-        .requestMatchers("/public/**").permitAll()
-        .requestMatchers("/actuator/prometheus/**")
+        .requestMatchers(publicMatcher).permitAll()
+        .requestMatchers(prometheusMatcher)
         .hasAnyRole("PROMETHEUS")
         .anyRequest().authenticated()
         .and()
