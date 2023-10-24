@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.0.10</version>
+    <version>3.0.12</version>
     <relativePath /> <!-- lookup parent from repository -->
   </parent>
   <groupId>tech.artcoded</groupId>
@@ -14,15 +16,15 @@
   <description>Triplestore based on tdb</description>
   <properties>
     <java.version>20</java.version>
-    <artemis-jms-server.version>2.28.0</artemis-jms-server.version>
+    <artemis-jms-server.version>2.31.0</artemis-jms-server.version>
     <ehcache.version>3.10.8</ehcache.version>
     <jena.version>4.7.0</jena.version>
-    <camel.version>4.0.0</camel.version>
-    <commons-io.version>2.11.0</commons-io.version>
-    <commons-lang3.version>3.12.0</commons-lang3.version>
-    <guava.version>31.1-jre</guava.version>
-    <micrometer-registry-prometheus.version>1.10.5</micrometer-registry-prometheus.version>
-    <bucket4j.version>0.9.0</bucket4j.version>
+    <camel.version>4.1.0</camel.version>
+    <commons-io.version>2.14.0</commons-io.version>
+    <commons-lang3.version>3.13.0</commons-lang3.version>
+    <guava.version>32.1.3-jre</guava.version>
+    <micrometer-registry-prometheus.version>1.11.5</micrometer-registry-prometheus.version>
+    <bucket4j.version>0.9.1</bucket4j.version>
     <rdf-patch.version>1.1.2</rdf-patch.version>
   </properties>
   <scm>
