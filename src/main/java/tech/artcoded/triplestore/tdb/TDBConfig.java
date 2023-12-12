@@ -1,5 +1,6 @@
 package tech.artcoded.triplestore.tdb;
 
+import java.io.File;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.jena.query.Dataset;
 import org.apache.jena.rdf.model.AnonId;
@@ -12,8 +13,6 @@ import org.apache.jena.vocabulary.RDF;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import java.io.File;
 
 @Configuration
 @Slf4j
@@ -37,6 +36,5 @@ public class TDBConfig {
     dataset.addLiteral(VocabTDB2.pUnionDefaultGraph, unionDefaultGraph);
 
     return (Dataset) AssemblerUtils.build(assemblerModel, VocabTDB2.tDatasetTDB);
-
   }
 }
