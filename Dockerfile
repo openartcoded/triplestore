@@ -1,4 +1,4 @@
-FROM maven:3-eclipse-temurin-20 as builder
+FROM maven:3-eclipse-temurin-21 as builder
 LABEL maintainer="contact@bittich.be"
 
 WORKDIR /app
@@ -11,7 +11,7 @@ COPY ./src ./src
 
 RUN mvn package -DskipTests
 
-FROM ibm-semeru-runtimes:open-20-jre
+FROM ibm-semeru-runtimes:open-21-jre
 
 WORKDIR /app
 
