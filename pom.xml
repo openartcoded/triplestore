@@ -9,7 +9,7 @@
   </parent>
   <groupId>tech.artcoded</groupId>
   <artifactId>triplestore</artifactId>
-  <version>2024.1.1</version>
+  <version>2024.1.2-SNAPSHOT</version>
   <name>triplestore</name>
   <description>Triplestore based on tdb</description>
   <properties>
@@ -28,7 +28,7 @@
     <connection>
             scm:git:git@github.com:openartcoded/triplestore.git
         </connection>
-    <tag>2024.1.1</tag>
+    <tag>2024.0.6</tag>
   </scm>
   <dependencies>
     <dependency>
