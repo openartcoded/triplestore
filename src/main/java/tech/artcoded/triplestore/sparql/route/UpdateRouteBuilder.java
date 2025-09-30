@@ -46,7 +46,7 @@ public class UpdateRouteBuilder extends RouteBuilder {
             simple("Update query has been executed to the triplestore"))
         .setProperty(HEADER_TYPE, constant(UPDATE_QUERY_TRIPLESTORE))
         .transform()
-        .body(o -> UUID.randomUUID().toString())
+        .body(_ -> UUID.randomUUID().toString())
         .setHeader(CORRELATION_ID, body())
         .setHeader(HEADER_TITLE, exchangeProperty(HEADER_TITLE))
         .setHeader(HEADER_TYPE, exchangeProperty(HEADER_TYPE))
