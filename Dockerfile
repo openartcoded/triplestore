@@ -11,7 +11,7 @@ COPY ./src ./src
 
 RUN mvn package -DskipTests
 
-FROM ibm-semeru-runtimes:open-25-jre
+FROM ibm-semeru-runtimes:open-25-jre-jammy
 
 WORKDIR /app
 
