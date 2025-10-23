@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.5.6</version>
+    <version>3.5.7</version>
     <relativePath /> <!-- lookup parent from repository -->
   </parent>
   <groupId>tech.artcoded</groupId>
@@ -13,15 +15,15 @@
   <name>triplestore</name>
   <description>Triplestore based on tdb</description>
   <properties>
-    <java.version>24</java.version>
-    <artemis-jms-server.version>2.42.0</artemis-jms-server.version>
+    <java.version>25</java.version>
+    <artemis-jms-server.version>2.43.0</artemis-jms-server.version>
     <ehcache.version>3.11.1</ehcache.version>
     <jena.version>5.5.0</jena.version>
-    <camel.version>4.14.0</camel.version>
+    <camel.version>4.15.0</camel.version>
     <commons-io.version>2.20.0</commons-io.version>
     <commons-lang3.version>3.19.0</commons-lang3.version>
     <guava.version>33.5.0-jre</guava.version>
-    <micrometer-registry-prometheus.version>1.15.4</micrometer-registry-prometheus.version>
+    <micrometer-registry-prometheus.version>1.15.5</micrometer-registry-prometheus.version>
     <bucket4j.version>0.13.0</bucket4j.version>
   </properties>
   <scm>
@@ -31,11 +33,11 @@
     <tag>2024.0.6</tag>
   </scm>
   <dependencies>
-   <dependency>
-    <groupId>com.giffing.bucket4j.spring.boot.starter</groupId>
-    <artifactId>bucket4j-spring-boot-starter</artifactId>
+    <dependency>
+      <groupId>com.giffing.bucket4j.spring.boot.starter</groupId>
+      <artifactId>bucket4j-spring-boot-starter</artifactId>
       <version>${bucket4j.version}</version>
-</dependency>
+    </dependency>
 
     <dependency>
       <groupId>org.springframework.boot</groupId>
