@@ -2,6 +2,10 @@ application:
   basePath: ${DATA_DIR:/tmp}
 server:
   port: ${SERVER_PORT:0}
+  tomcat:
+    # Undertow (used before Spring Boot 4) had no form size limit; Tomcat defaults to 2MB, which would
+    # silently drop large SPARQL updates sent as form params. -1 = unlimited.
+    max-http-form-post-size: ${MAX_HTTP_FORM_POST_SIZE:-1}
 
 triplestore:
   query:
@@ -22,6 +26,10 @@ sparql:
 spring:
   application:
     name: tdb-triplestore
+  mvc:
+    async:
+      # results are streamed with StreamingResponseBody (async); Tomcat would cut them after 30s by default
+      request-timeout: ${ASYNC_REQUEST_TIMEOUT:-1}
   config:
     import:
       - ${SECURITY_CONFIG:classpath:config/security-disabled.yml}

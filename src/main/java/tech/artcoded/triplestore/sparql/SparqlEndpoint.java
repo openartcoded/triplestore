@@ -9,6 +9,7 @@ import org.apache.jena.query.Query;
 import org.apache.jena.update.UpdateRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -100,7 +101,8 @@ public class SparqlEndpoint {
 
     Exception exc) {
       return ResponseEntity.status(400)
-          .body((out) -> IOUtils.write("{error: '%s'}".formatted(exc.getMessage()), out, UTF_8));
+          .contentType(MediaType.APPLICATION_JSON)
+          .body((out) -> IOUtils.write(toJsonError(exc.getMessage()), out, UTF_8));
     }
   }
 
@@ -126,6 +128,27 @@ public class SparqlEndpoint {
         () -> this.producerTemplate.sendBody("jms:queue:sparql-update", ExchangePattern.InOnly, update.toString()));
     return ResponseEntity.status(200)
         .body((out) -> IOUtils.write("processing update", out, UTF_8));
+  }
+
+  static String toJsonError(String message) {
+    var sb = new StringBuilder("{\"error\": \"");
+    for (char c : String.valueOf(message).toCharArray()) {
+      switch (c) {
+        case '"' -> sb.append("\\\"");
+        case '\\' -> sb.append("\\\\");
+        case '\n' -> sb.append("\\n");
+        case '\r' -> sb.append("\\r");
+        case '\t' -> sb.append("\\t");
+        default -> {
+          if (c < 0x20) {
+            sb.append("\\u%04x".formatted((int) c));
+          } else {
+            sb.append(c);
+          }
+        }
+      }
+    }
+    return sb.append("\"}").toString();
   }
 
   boolean canUpdate() {

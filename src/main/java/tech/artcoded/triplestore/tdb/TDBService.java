@@ -10,21 +10,25 @@ import static org.apache.jena.riot.resultset.ResultSetLang.RS_XML;
 
 import com.google.common.collect.Lists;
 import com.google.common.io.FileBackedOutputStream;
+import java.io.FilterInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.jena.atlas.web.ContentType;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Triple;
 import org.apache.jena.query.Dataset;
@@ -41,6 +45,7 @@ import org.apache.jena.sparql.exec.UpdateExec;
 import org.apache.jena.system.Txn;
 import org.apache.jena.update.UpdateRequest;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import tech.artcoded.triplestore.sparql.QueryParserUtil;
 import tech.artcoded.triplestore.sparql.SparqlResult;
@@ -50,6 +55,8 @@ import tech.artcoded.triplestore.sparql.SparqlResult;
 public class TDBService {
 
   private static final int THRESHOLD = 4 * 1024 * 1024; // 4mb
+  private static final List<Lang> RESULT_SET_LANGS = List.of(RS_JSON, RS_XML, RS_CSV, RS_Text);
+  private static final ExecutorService QUERY_EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
 
   private final Dataset ds;
 
@@ -72,13 +79,17 @@ public class TDBService {
           .timeout(timeout, TimeUnit.SECONDS)
           .build()) {
         return switch (q.queryType()) {
-          case ASK -> tryFormat((lang, out) -> output(out, queryExecution.execAsk(), lang), acceptHeader, RS_JSON);
+          case ASK -> tryFormat((lang, out) -> output(out, queryExecution.execAsk(), lang), acceptHeader, RS_JSON,
+              RESULT_SET_LANGS);
           case SELECT ->
-            tryFormat((lang, out) -> output(out, queryExecution.execSelect(), lang), acceptHeader, RS_JSON);
+            tryFormat((lang, out) -> output(out, queryExecution.execSelect(), lang), acceptHeader, RS_JSON,
+                RESULT_SET_LANGS);
           case DESCRIBE ->
-            tryFormat((lang, out) -> write(out, queryExecution.execDescribe(), lang), acceptHeader, TURTLE);
+            tryFormat((lang, out) -> write(out, queryExecution.execDescribe(), lang), acceptHeader, TURTLE,
+                rdfLangs());
           case CONSTRUCT ->
-            tryFormat((lang, out) -> write(out, queryExecution.execConstruct(), lang), acceptHeader, TURTLE);
+            tryFormat((lang, out) -> write(out, queryExecution.execConstruct(), lang), acceptHeader, TURTLE,
+                rdfLangs());
           default -> throw new UnsupportedOperationException(q.queryType() + " Not supported");
         };
       } catch (Exception exc) {
@@ -90,7 +101,8 @@ public class TDBService {
   }
 
   private SparqlResult executeQueryTimeout(Supplier<SparqlResult> supplier) {
-    CompletableFuture<SparqlResult> future = CompletableFuture.supplyAsync(supplier);
+    // dedicated (virtual) threads: blocking queries must not starve the shared ForkJoin common pool
+    CompletableFuture<SparqlResult> future = CompletableFuture.supplyAsync(supplier, QUERY_EXECUTOR);
     try {
       return future.get(timeout, TimeUnit.SECONDS);
     } catch (TimeoutException | InterruptedException | ExecutionException e) {
@@ -99,8 +111,9 @@ public class TDBService {
     }
   }
 
-  private SparqlResult tryFormat(BiConsumer<Lang, OutputStream> consumer, String contentType, Lang fallback) {
-    Lang lang = guessLang(contentType, fallback);
+  private SparqlResult tryFormat(BiConsumer<Lang, OutputStream> consumer, String contentType, Lang fallback,
+      List<Lang> candidates) {
+    Lang lang = guessLang(contentType, fallback, candidates);
     var body = writeToOutputStream(outputStream -> consumer.accept(lang, outputStream));
 
     return SparqlResult.builder()
@@ -111,22 +124,59 @@ public class TDBService {
 
   @SneakyThrows
   private InputStream writeToOutputStream(Consumer<OutputStream> consumer) {
-    try (var outputStream = new FileBackedOutputStream(THRESHOLD, true)) {
+    var outputStream = new FileBackedOutputStream(THRESHOLD);
+    try (outputStream) {
       consumer.accept(outputStream);
-      return outputStream.asByteSource().openStream();
+    } catch (RuntimeException e) {
+      outputStream.reset();
+      throw e;
     }
+    // reset() deletes the temp file (if the result exceeded the threshold) once the response has been streamed
+    return new FilterInputStream(outputStream.asByteSource().openStream()) {
+      @Override
+      public void close() throws IOException {
+        try {
+          super.close();
+        } finally {
+          outputStream.reset();
+        }
+      }
+    };
   }
 
-  private Lang guessLang(String contentType, Lang fallback) {
-    try {
-      return Stream.concat(RDFLanguages.getRegisteredLanguages().stream(), Stream.of(RS_Text, RS_JSON, RS_XML, RS_CSV))
-          .filter(l -> l.getContentType().equals(ContentType.create(contentType)))
-          .findFirst().orElse(fallback);
-    } catch (Exception exc) {
-      log.error("unexpected exception occurred", exc);
+  private static List<Lang> rdfLangs() {
+    return RDFLanguages.getRegisteredLanguages().stream()
+        .filter(l -> RDFLanguages.isTriples(l) || RDFLanguages.isQuads(l))
+        .toList();
+  }
+
+  /**
+   * Picks the first language (by Accept q-value, then order) matching the Accept header among the
+   * languages that make sense for the query type. Falls back when the header is missing, a wildcard,
+   * or unknown.
+   */
+  static Lang guessLang(String acceptHeader, Lang fallback, List<Lang> candidates) {
+    if (acceptHeader == null || acceptHeader.isBlank()) {
       return fallback;
     }
-
+    try {
+      var mediaTypes = new ArrayList<>(MediaType.parseMediaTypes(acceptHeader));
+      mediaTypes.sort(Comparator.comparingDouble(MediaType::getQualityValue).reversed());
+      for (MediaType mediaType : mediaTypes) {
+        if (mediaType.isWildcardType() || mediaType.isWildcardSubtype()) {
+          continue;
+        }
+        String requested = mediaType.getType() + "/" + mediaType.getSubtype();
+        for (Lang lang : candidates) {
+          if (lang.getContentType().getContentTypeStr().equalsIgnoreCase(requested)) {
+            return lang;
+          }
+        }
+      }
+    } catch (Exception exc) {
+      log.debug("could not parse accept header '{}': {}", acceptHeader, exc.getMessage());
+    }
+    return fallback;
   }
 
   @SneakyThrows

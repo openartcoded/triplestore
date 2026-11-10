@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.5.7</version>
+    <version>4.1.2</version>
     <relativePath /> <!-- lookup parent from repository -->
   </parent>
   <groupId>tech.artcoded</groupId>
@@ -14,15 +14,13 @@
   <description>Triplestore based on tdb</description>
   <properties>
     <java.version>25</java.version>
-    <artemis-jms-server.version>2.43.0</artemis-jms-server.version>
-    <ehcache.version>3.11.1</ehcache.version>
-    <jena.version>5.5.0</jena.version>
-    <camel.version>4.15.0</camel.version>
-    <commons-io.version>2.20.0</commons-io.version>
-    <commons-lang3.version>3.19.0</commons-lang3.version>
-    <guava.version>33.5.0-jre</guava.version>
-    <micrometer-registry-prometheus.version>1.15.5</micrometer-registry-prometheus.version>
-    <bucket4j.version>0.13.0</bucket4j.version>
+    <ehcache.version>3.12.0</ehcache.version>
+    <jena.version>6.2.0</jena.version>
+    <camel.version>4.22.2</camel.version>
+    <commons-io.version>2.22.0</commons-io.version>
+    <commons-lang3.version>3.21.0</commons-lang3.version>
+    <guava.version>33.8.0-jre</guava.version>
+    <bucket4j.version>0.14.0</bucket4j.version>
   </properties>
   <scm>
     <connection>
@@ -98,17 +96,12 @@
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+      <artifactId>spring-boot-starter-security-oauth2-resource-server</artifactId>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-web</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>org.springframework.boot</groupId>
-          <artifactId>spring-boot-starter-tomcat</artifactId>
-        </exclusion>
-      </exclusions>
+      <!-- Boot 4: starter-web renamed to starter-webmvc; Undertow is no longer supported, Tomcat is used -->
+      <artifactId>spring-boot-starter-webmvc</artifactId>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
@@ -136,15 +129,14 @@
     <dependency>
       <groupId>io.micrometer</groupId>
       <artifactId>micrometer-registry-prometheus</artifactId>
-      <version>${micrometer-registry-prometheus.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-micrometer-metrics</artifactId>
     </dependency>
     <dependency>
       <groupId>javax.cache</groupId>
       <artifactId>cache-api</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-undertow</artifactId>
     </dependency>
     <dependency>
       <groupId>org.projectlombok</groupId>
@@ -154,7 +146,8 @@
     <dependency>
       <groupId>org.apache.activemq</groupId>
       <artifactId>artemis-jms-server</artifactId>
-      <version>${artemis-jms-server.version}</version>
+      <!-- aligned with the Boot-managed Artemis client -->
+      <version>${artemis.version}</version>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -174,8 +167,7 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
-          <source>${java.version}</source>
-          <target>${java.version}</target>
+          <release>${java.version}</release>
           <annotationProcessorPaths>
             <path>
               <groupId>org.projectlombok</groupId>

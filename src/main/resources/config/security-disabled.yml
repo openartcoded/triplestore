@@ -1,8 +1,6 @@
 application:
   security:
     enabled: false
-spring:
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
-      - org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
+# Spring Boot 4 moved the security auto-configuration classes to new packages, so excluding them
+# by their old names was silently ignored. Security is now opened up by
+# tech.artcoded.triplestore.security.SecurityDisabledConfig instead (permit-all, csrf disabled).

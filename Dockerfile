@@ -1,4 +1,4 @@
-FROM maven:3-eclipse-temurin-25 as builder
+FROM maven:3-eclipse-temurin-25 AS builder
 LABEL maintainer="contact@bittich.be"
 
 WORKDIR /app

@@ -30,7 +30,8 @@ public interface QueryParserUtil {
     try {
       return of(new QueryTuple(QueryFactory.create(query), QueryType.READ));
     } catch (QueryException exception) {
-      LOGGER.error("unsupported operation:", exception);
+      // expected for every update request (we try to parse as a query first), so don't log at error level
+      LOGGER.debug("not a query: {}", exception.getMessage());
       if (forceRead) {
         throw new RuntimeException(exception.getMessage());
       }
@@ -42,7 +43,7 @@ public interface QueryParserUtil {
     try {
       return of(new QueryTuple(UpdateFactory.create(query), QueryType.UPDATE));
     } catch (Exception exc) {
-      LOGGER.error("unsupported operation:", exc);
+      LOGGER.warn("unsupported operation: {}", exc.getMessage());
       throw new RuntimeException(exc.getMessage());
     }
   }

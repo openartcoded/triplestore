@@ -8,7 +8,6 @@ import org.apache.camel.ExchangePattern;
 import org.apache.camel.Header;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
@@ -41,7 +40,7 @@ public class MigrationRouteBuilder extends RouteBuilder {
     this.tdbService = tdbService;
   }
 
-  record Migration(String uuid, long count) {
+  public record Migration(String uuid, long count) {
   }
 
   @Override
@@ -79,17 +78,18 @@ public class MigrationRouteBuilder extends RouteBuilder {
         .endChoice();
   }
 
-  void addGraphToCache(@Body byte[] file,
+  public void addGraphToCache(@Body byte[] file,
       @Header(Exchange.FILE_NAME) String fileName) {
-    GRAPH_CACHE.put(FilenameUtils.getBaseName(fileName), IOUtils.toString(file, StandardCharsets.UTF_8.name()));
+    // trim: a trailing newline in the .graph file would otherwise end up inside the graph IRI
+    GRAPH_CACHE.put(FilenameUtils.getBaseName(fileName), new String(file, StandardCharsets.UTF_8).trim());
   }
 
-  Migration performMigration(@Body byte[] file,
+  public Migration performMigration(@Body byte[] file,
       @Header(Exchange.FILE_NAME) String fileName) {
     String extension = FilenameUtils.getExtension(fileName);
 
     if ("sparql".equalsIgnoreCase(extension)) {
-      var summary = tdbService.executeUpdateQuery(IOUtils.toString(file, StandardCharsets.UTF_8.name()));
+      var summary = tdbService.executeUpdateQuery(new String(file, StandardCharsets.UTF_8));
       return new Migration(UUID.randomUUID().toString(), summary.getCountAddData() + summary.getCountDeleteData());
     } else {
       Lang lang = RDFLanguages.filenameToLang(fileName);

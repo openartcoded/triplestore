@@ -26,7 +26,7 @@ public class ResourceServerConfig {
     var mvc = PathPatternRequestMatcher.withDefaults();
     http.csrf(c -> c.disable())
         .authorizeHttpRequests(a -> a.requestMatchers(mvc.matcher("/public/**")).permitAll()
-            .requestMatchers(mvc.matcher("/api/actuator/prometheus/**"))
+            .requestMatchers(mvc.matcher("/actuator/prometheus/**"))
             .hasAnyRole("PROMETHEUS")
             .anyRequest().authenticated())
 
